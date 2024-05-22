@@ -163,7 +163,6 @@ object Diagnost {
 
     val result = Seq(s"Диагноз $diagnose").toDF()
 
-
     result
       .repartition(1)
       .write
