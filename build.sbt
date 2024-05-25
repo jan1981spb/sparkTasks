@@ -7,6 +7,7 @@ libraryDependencies += "org.scalafx" %% "scalafx" % "22.0.0-R33"
 libraryDependencies += "org.apache.spark" %% "spark-core" % "3.2.2"
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.3.1"
 libraryDependencies += "org.postgresql" % "postgresql" % "42.5.1"
+libraryDependencies += "com.typesafe" % "config" % "1.4.2"
 // https://mvnrepository.com/artifact/org.scalafx/scalafx
 
 
