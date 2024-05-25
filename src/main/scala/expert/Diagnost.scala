@@ -27,12 +27,18 @@ object Diagnost {
       .option("header", "true")
       .save("/Users/andrej/IdeaProjects/sparkSandbox/src/main/resources/cluster/today")
 
+    val metricsDirectory = new File("/Users/andrej/IdeaProjects/sparkSandbox/src/main/resources/cluster/today")
+
+    if (metricsDirectory.exists && metricsDirectory.isDirectory) {
+      val file = metricsDirectory.listFiles.filter(_.getName.endsWith(".csv")).head
+      file.renameTo(new File("/Users/andrej/IdeaProjects/sparkSandbox/src/main/resources/cluster/today/metrics.csv"))
+    }
+
     val activeApriorP = 0.6
     val failedApriorP = 0.3
     val degradedApriorP = 0.1
 
     df.persist()
-
 
     val size: Long = df.count()
 
@@ -122,11 +128,11 @@ object Diagnost {
       val minDegradedP = (degradedApriorP * degradedCauseNoCommonP) / (degradedApriorP * degradedCauseNoCommonP + (1 - degradedApriorP) * noDegradedCauseNoCommonP)
 
       if (minActiveP > maxFailP && minActiveP > maxDegradedP) {
-        s"Наиболее вероятно состоятие кластера ACTIVE: P min ACTIVE $minActiveP > P max FAILED $maxFailP и > P max DEGRADED $maxDegradedP, выявлено на шаге $count"
+        s"Наиболее вероятно состояние кластера ACTIVE: P min ACTIVE $minActiveP > P max FAILED $maxFailP и > P max DEGRADED $maxDegradedP, выявлено на шаге $count"
       } else if (minFailP > maxActiveP && minFailP > maxDegradedP) {
-        s"Наиболее вероятно состоятие кластера FAILED: P min FAILED $minFailP > P max ACTIVE $maxActiveP и > P max DEGRADED $maxDegradedP, выявлено на шаге $count"
+        s"Наиболее вероятно состояние кластера FAILED: P min FAILED $minFailP > P max ACTIVE $maxActiveP и > P max DEGRADED $maxDegradedP, выявлено на шаге $count"
       } else if (minDegradedP > maxActiveP && minDegradedP > maxFailP) {
-        s"Наиболее вероятно состоятие кластера DEGRADED: P min DEGRADED $minDegradedP > P max ACTIVE $maxActiveP и > P max FAILED $maxFailP, выявлено на шаге $count"
+        s"Наиболее вероятно состояние кластера DEGRADED: P min DEGRADED $minDegradedP > P max ACTIVE $maxActiveP и > P max FAILED $maxFailP, выявлено на шаге $count"
       } else {
         if (count == 0) {
           makeDiagnose(cpuWithActiveP, responseClusterWithActiveP = 1, nodeResponseWithActiveP,
