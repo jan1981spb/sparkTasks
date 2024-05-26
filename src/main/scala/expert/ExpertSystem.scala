@@ -19,7 +19,7 @@ object ExpertSystem
   val config: Config = ConfigFactory.load().getConfig("metrics")
   val features = config.root.keySet.asScala.map(key ⇒ key → config.getString(key)).toMap
 
-  diagnost.calculateStateProbabilities(features.filter { case (_, value) => value == "true" }.keys.toList)
+  // diagnost.calculateStateProbabilities(features.filter { case (_, value) => value == "true" }.keys.toList)
 
   private val metrics = ObservableBuffer[Metrics]()
   val parser = new CsvReader()

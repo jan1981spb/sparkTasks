@@ -10,8 +10,8 @@ class NaiveBayesDiagnost extends Diagnost {
 
   val spark: SparkSession = SparkSession.builder.master("local").getOrCreate()
 
-  case class ConditionProbabilities(metricsWithStateP: Double = 1.0, noMetricWithStateP: Double = 1.0,
-                                    metricsWithNoStateP: Double = 1.0, noMetricsNoStateP: Double = 1.0)
+  case class ConditionProbabilities(stateWithAllMetricsP: Double = 1.0, noStateWithAllMetricsP: Double = 1.0,
+                                    stateWithNoMetricsP: Double = 1.0, noStateWithNoMetricsP: Double = 1.0)
 
   calculateStateProbabilities(List("cpu_per_cluster", "response_delay_cluster", "response_delay_node"))
 
@@ -29,16 +29,15 @@ class NaiveBayesDiagnost extends Diagnost {
 
     val statesDf: DataFrame = readFromJdbc(table = "states")
 
-    // TODO Превратить count из действия в трансформацию
     val size: Long = metricsDf.count()
 
-    val states = statesDf.collect().map(r => (r.getInt(0), r.getString(1)))
+    val states = statesDf.collect().map(r => (r.getInt(0), r.getString(1), r.getDouble(3)))
 
     val stateProbabilities: Array[Row] = states.map {
       state => {
         val stateId = state._1
         val stateName = state._2
-        val aprioriStateP = 0.3
+        val aprioriStateP = state._3
         val ConditionProbabilities(metricsWithStateP, noMetricWithStateP, metricsWithNoStateP, noMetricsNoStateP) = metricsForCalc
           .foldLeft(ConditionProbabilities()) {
             (accumulatedProbabilities, metric) =>
@@ -48,10 +47,11 @@ class NaiveBayesDiagnost extends Diagnost {
               val metricWithNoStateCount = metricsDf.where(metricsDf(metric) > 0 and !(metricsDf("state_id") === stateId)).count()
               val metricWithNoStateP = metricWithNoStateCount.toFloat / size.toFloat
 
-              ConditionProbabilities(accumulatedProbabilities.metricsWithStateP * metricWithStateP,
-                accumulatedProbabilities.noMetricWithStateP * metricWithNoStateP,
-                accumulatedProbabilities.metricsWithNoStateP * (1 - metricWithStateP),
-                accumulatedProbabilities.noMetricsNoStateP * (1 - metricWithNoStateP)
+              // Умножаем каждую вероятность на накопленные значения, чтобы получить итоготвые значения условных вероятностей.
+              ConditionProbabilities(accumulatedProbabilities.stateWithAllMetricsP * metricWithStateP,
+                accumulatedProbabilities.noStateWithAllMetricsP * metricWithNoStateP,
+                accumulatedProbabilities.stateWithNoMetricsP * (1 - metricWithStateP),
+                accumulatedProbabilities.noStateWithNoMetricsP * (1 - metricWithNoStateP)
               )
           }
 
